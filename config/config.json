@@ -1,10 +1,11 @@
 {
-    "discord_enabled": "false",
-    "discord_bot_token": "MTIzMDQ3",
-    "discord_channel_id": "12194545071",
+    "discord_enabled": "true",
+    "discord_bot_token": "MTIzMDQ3MzI5NDE",
+    "discord_channel_id": "12194",
     "server": {
         "name": "Conan Exiles Server",
         "logs_directory": "",
+        "startup_delay": 10,
         "ports": [
             {"port": 7777, "proto": "UDP"},
             {"port": 7777, "proto": "TCP"},
