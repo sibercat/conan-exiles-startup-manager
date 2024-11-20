@@ -1,4 +1,4 @@
-# V0.0.2
+# V0.0.4
 import subprocess
 import time
 from win32com.shell import shell
@@ -41,6 +41,18 @@ def get_ports_from_config():
     except Exception as e:
         print(f"Error reading ports from config: {e}")
         return DEFAULT_PORTS
+
+def get_startup_delay():
+    """Get startup delay from config file"""
+    try:
+        with open(CONFIG_PATH, 'r') as config_file:
+            config = json.load(config_file)
+            if 'server' in config and 'startup_delay' in config['server']:
+                return int(config['server']['startup_delay'])
+            return 0  # Default to no delay if not specified
+    except Exception as e:
+        print(f"Error reading startup delay from config: {e}")
+        return 0  # Default to no delay on error
 
 def setup_logging():
     """Setup logging configuration"""
@@ -117,7 +129,7 @@ def allow_ports(ports):
         print(f"Error allowing ports: {e}")
 
 class LogHandler(FileSystemEventHandler):
-    def __init__(self, log_dir, discord_manager=None, logger=None, ports=None):
+    def __init__(self, log_dir, discord_manager=None, logger=None, ports=None, startup_delay=0):
         self.load_complete = False
         self.server_exiting = False
         self.log_dir = log_dir
@@ -127,6 +139,7 @@ class LogHandler(FileSystemEventHandler):
         self.discord = discord_manager
         self.logger = logger or logging.getLogger('ServerMonitor')
         self.ports = ports
+        self.startup_delay = startup_delay
 
     def on_created(self, event):
         """Handle new log file creation"""
@@ -150,6 +163,11 @@ class LogHandler(FileSystemEventHandler):
                     lines = f.readlines()[-100:]
                     for line in reversed(lines):
                         if self.LOAD_COMPLETE_STRING in line and not self.load_complete:
+                            if self.startup_delay > 0:
+                                self.logger.info(f"Server loaded. Waiting {self.startup_delay} seconds before allowing connections...")
+                                print(f"\nServer loaded. Waiting {self.startup_delay} seconds before allowing connections...")
+                                time.sleep(self.startup_delay)
+
                             self.logger.info("Server fully loaded. Allowing connections...")
                             print("Server fully loaded. Allowing connections...")
                             allow_ports(self.ports)
@@ -171,9 +189,9 @@ class LogHandler(FileSystemEventHandler):
                 self.logger.error(f"Error reading log file: {e}")
                 print(f"Error reading log file: {e}")
 
-def monitor_server(log_dir, discord_manager, logger, ports):
+def monitor_server(log_dir, discord_manager, logger, ports, startup_delay):
     """Main server monitoring function"""
-    event_handler = LogHandler(log_dir, discord_manager, logger, ports)
+    event_handler = LogHandler(log_dir, discord_manager, logger, ports, startup_delay)
     observer = Observer()
     
     observer.schedule(event_handler, path=log_dir, recursive=False)
@@ -209,8 +227,13 @@ def main():
         input("Press Enter to exit...")
         exit()
 
-    # Load ports configuration
+    # Load configurations
     ports = get_ports_from_config()
+    startup_delay = get_startup_delay()
+    
+    if startup_delay > 0:
+        logger.info(f"Configured startup delay: {startup_delay} seconds")
+        print(f"\nConfigured startup delay: {startup_delay} seconds")
     
     discord_manager = DiscordManager(config_path=CONFIG_PATH)
     if discord_manager.is_enabled():
@@ -229,7 +252,7 @@ def main():
     print("\nStarting server monitoring...")
     
     try:
-        monitor_server(log_dir, discord_manager, logger, ports)
+        monitor_server(log_dir, discord_manager, logger, ports, startup_delay)
     except KeyboardInterrupt:
         print("\nShutting down gracefully...")
     except Exception as e:
