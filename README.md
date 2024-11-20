@@ -8,12 +8,6 @@ A Python-based monitoring tool for Conan Exiles dedicated servers that prevents 
 - Real-time server status monitoring via Discord notifications
 - Log file monitoring for server state changes
 
-## Managed Ports
-- 7777 TCP/UDP (Game Port)
-- 7778 UDP
-- 27015 UDP (Query Port)
-- 25575 TCP (RCON Port)
-
 ## Purpose
 This tool helps server administrators by preventing players from connecting to the server before it's fully initialized, avoiding potential connection issues and ensuring smoother server starts. Provides real-time status updates through Discord notifications.
 
