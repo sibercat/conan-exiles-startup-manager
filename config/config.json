@@ -1,5 +1,5 @@
 {
-    "discord_enabled": "true",
+    "discord_enabled": "false",
     "discord_bot_token": "MTIzMDQ3",
     "discord_channel_id": "12194545071",
     "server": {
