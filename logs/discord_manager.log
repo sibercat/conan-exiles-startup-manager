@@ -1,0 +1,10 @@
+2024-11-20 03:26:48,179 - DiscordManager - INFO - Configuration loaded successfully
+2024-11-20 03:26:48,180 - DiscordManager - INFO - Discord manager initialized and enabled
+2024-11-20 03:26:48,181 - DiscordManager - INFO - Discord client thread started
+2024-11-20 03:26:48,415 - DiscordManager - ERROR - Error starting Discord client: Improper token has been passed.
+2024-11-20 03:26:50,352 - DiscordManager - INFO - Discord messaging is disabled or not running. Message not sent.
+2024-11-20 03:26:56,453 - DiscordManager - INFO - Discord messaging is disabled or not running. Message not sent.
+2024-11-20 03:26:56,455 - DiscordManager - INFO - Stopping Discord manager...
+2024-11-20 03:26:56,455 - DiscordManager - INFO - Discord manager stopped
+2024-11-20 03:26:56,455 - DiscordManager - INFO - Stopping Discord manager...
+2024-11-20 03:26:56,455 - DiscordManager - INFO - Discord manager stopped

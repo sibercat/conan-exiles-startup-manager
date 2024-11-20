@@ -1,0 +1,16 @@
+{
+    "discord_enabled": "true",
+    "discord_bot_token": "MTIzMDQ3",
+    "discord_channel_id": "12194545071",
+    "server": {
+        "name": "Conan Exiles Server",
+        "logs_directory": "",
+        "ports": [
+            {"port": 7777, "proto": "UDP"},
+            {"port": 7777, "proto": "TCP"},
+            {"port": 7778, "proto": "UDP"},
+            {"port": 27015, "proto": "UDP"},
+            {"port": 25575, "proto": "TCP"}
+        ]
+    }
+}
