@@ -28,6 +28,9 @@ class DiscordManager:
         # Load config
         self.config = self._load_config()
         
+        # Load message control settings
+        self.message_control = self._get_message_control()
+        
         # Setup Discord client if enabled
         if self.is_enabled():
             self._setup_client()
@@ -63,6 +66,39 @@ class DiscordManager:
             logger.addHandler(file_handler)
             logger.addHandler(console_handler)
 
+    def _get_message_control(self):
+        """Get message control settings from config"""
+        default_controls = {
+            "startup_notification": True,
+            "loading_notification": True,
+            "ready_notification": True,
+            "shutdown_notification": True,
+            "monitor_stop_notification": True
+        }
+        
+        try:
+            if 'server' in self.config and 'message_control' in self.config['server']:
+                return {**default_controls, **self.config['server']['message_control']}
+            return default_controls
+        except Exception as e:
+            self.logger.error(f"Error loading message control settings: {e}")
+            return default_controls
+
+    def _get_message_type(self, message):
+        """Determine message type based on content"""
+        message_types = {
+            "[START": "startup_notification",
+            "[UPDATE": "loading_notification",
+            "[SUCCESS": "ready_notification",
+            "[WARNING": "shutdown_notification",
+            "[STOP": "monitor_stop_notification"
+        }
+        
+        for prefix, msg_type in message_types.items():
+            if message.startswith(prefix):
+                return msg_type
+        return None
+
     def _load_config(self):
         """Load configuration from json file"""
         try:
@@ -80,12 +116,24 @@ class DiscordManager:
                     "server": {
                         "name": "Conan Exiles Server",
                         "logs_directory": "",
-                        "startup_delay": 30
+                        "startup_delay": 30,
+                        "message_control": {
+                            "startup_notification": True,
+                            "loading_notification": True,
+                            "ready_notification": True,
+                            "shutdown_notification": True,
+                            "monitor_stop_notification": True
+                        },
+                        "messages": {
+                            "startup": "[START] Server monitor starting up...",
+                            "loading": "[UPDATE] Server is starting up... Ports blocked for safety.",
+                            "ready": "[SUCCESS] Server is fully loaded and ready for connections!",
+                            "shutdown": "[WARNING] Server is shutting down...",
+                            "monitor_stop": "[STOP] Server monitor shutting down..."
+                        }
                     }
                 }
-                # Create config directory if it doesn't exist
                 os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
-                # Create default config file
                 with open(self.config_path, 'w', encoding='utf-8') as config_file:
                     json.dump(default_config, config_file, indent=2)
                 self.logger.info("Created default configuration file")
@@ -151,15 +199,21 @@ class DiscordManager:
         return enabled
 
     def send_message(self, message):
-        """Add message to the queue"""
-        if self.is_enabled() and self.running:
-            try:
-                self.message_queue.put(message)
-                self.logger.info(f"Message added to queue: {message}")
-            except Exception as e:
-                self.logger.error(f"Error adding message to queue: {e}")
-        else:
+        """Add message to the queue if the message type is enabled"""
+        if not self.is_enabled() or not self.running:
             self.logger.info("Discord messaging is disabled or not running. Message not sent.")
+            return
+
+        try:
+            message_type = self._get_message_type(message)
+            if message_type and not self.message_control.get(message_type, True):
+                self.logger.info(f"Message type '{message_type}' is disabled. Message not sent.")
+                return
+
+            self.message_queue.put(message)
+            self.logger.info(f"Message added to queue: {message}")
+        except Exception as e:
+            self.logger.error(f"Error adding message to queue: {e}")
 
     def start(self):
         """Start the Discord client in a separate thread"""
@@ -220,5 +274,6 @@ class DiscordManager:
             "connected": self.client and self.client.is_ready() if self.client else False,
             "channel_id": self.config.get('discord_channel_id', 'Not configured'),
             "bot_name": self.client.user.name if self.client and self.client.user else "Not connected",
-            "messages_queued": self.message_queue.qsize()
+            "messages_queued": self.message_queue.qsize(),
+            "message_control": self.message_control
         }
