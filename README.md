@@ -42,15 +42,30 @@ This tool helps server administrators by monitoring server status and optionally
     "discord_webhook_url": "your-webhook-url-here",
     "server": {
         "name": "Conan Exiles Server",
+        "logs_directory": "",
         "startup_delay": 30,
-        "firewall_enabled": true,
+        "firewall_enabled": false,
         "ports": [
             {"port": 7777, "proto": "UDP"},
             {"port": 7777, "proto": "TCP"},
             {"port": 7778, "proto": "UDP"},
             {"port": 27015, "proto": "UDP"},
             {"port": 25575, "proto": "TCP"}
-        ]
+        ],
+        "message_control": {
+            "startup_notification": true,
+            "loading_notification": true,
+            "ready_notification": true,
+            "shutdown_notification": true,
+            "monitor_stop_notification": true
+        },
+        "messages": {
+            "startup": "[START] Server monitor starting up...",
+            "loading": "[UPDATE] Server is starting up... Ports blocked for safety.",
+            "ready": "[SUCCESS] Server is fully loaded and ready for connections!",
+            "shutdown": "[WARNING] Server is shutting down...",
+            "monitor_stop": "[STOP] Server monitor shutting down..."
+        }
     }
 }
 ```
