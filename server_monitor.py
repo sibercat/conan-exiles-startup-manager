@@ -1,4 +1,4 @@
-# V0.0.8
+# V0.0.9
 import subprocess
 import time
 from win32com.shell import shell
@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import filedialog
 import os
 import logging
-from core.webhook_manager import WebhookManager  # Changed from discord_manager import
+from core.webhook_manager import WebhookManager
 from logging.handlers import RotatingFileHandler
 import sys
 import json
@@ -39,6 +39,18 @@ DEFAULT_MESSAGES = {
     "monitor_stop": "[STOP] Server monitor shutting down..."
 }
 
+def get_firewall_enabled():
+    """Get firewall enabled setting from config"""
+    try:
+        with open(CONFIG_PATH, 'r') as config_file:
+            config = json.load(config_file)
+            if 'server' in config:
+                return config['server'].get('firewall_enabled', True)  # Default to True for backward compatibility
+            return True
+    except Exception as e:
+        print(f"Error reading firewall setting from config: {e}")
+        return True  # Default to True for safety
+
 def get_ports_from_config():
     """Get ports configuration from config file"""
     try:
@@ -58,10 +70,10 @@ def get_startup_delay():
             config = json.load(config_file)
             if 'server' in config and 'startup_delay' in config['server']:
                 return int(config['server']['startup_delay'])
-            return 0  # Default to no delay if not specified
+            return 0
     except Exception as e:
         print(f"Error reading startup delay from config: {e}")
-        return 0  # Default to no delay on error
+        return 0
 
 def get_messages_from_config():
     """Get Discord messages from config file"""
@@ -125,8 +137,12 @@ def select_log_directory():
         
     return dir_path
 
-def block_ports(ports):
+def block_ports(ports, firewall_enabled=True):
     """Block configured ports using Windows Firewall"""
+    if not firewall_enabled:
+        print("Firewall management disabled, skipping port blocking.")
+        return
+
     try:
         for port_info in ports:
             rule_name = f"{RULE_NAME_PREFIX}_{port_info['port']}_{port_info['proto']}"
@@ -136,8 +152,12 @@ def block_ports(ports):
     except subprocess.CalledProcessError as e:
         print(f"Error blocking ports: {e}")
 
-def allow_ports(ports):
+def allow_ports(ports, firewall_enabled=True):
     """Allow configured ports by removing blocking rules"""
+    if not firewall_enabled:
+        print("Firewall management disabled, skipping port allowing.")
+        return
+
     try:
         for port_info in ports:
             rule_name = f"{RULE_NAME_PREFIX}_{port_info['port']}_{port_info['proto']}"
@@ -148,18 +168,19 @@ def allow_ports(ports):
         print(f"Error allowing ports: {e}")
 
 class LogHandler(FileSystemEventHandler):
-    def __init__(self, log_dir, webhook_manager=None, logger=None, ports=None, startup_delay=0, messages=None):
+    def __init__(self, log_dir, webhook_manager=None, logger=None, ports=None, startup_delay=0, messages=None, firewall_enabled=True):
         self.load_complete = False
         self.server_exiting = False
         self.log_dir = log_dir
         self.current_log_file = None
         self.LOAD_COMPLETE_STRING = "WorldPersistenceDone"
         self.SERVER_EXIT_STRING = "LogExit: Preparing to exit"
-        self.webhook = webhook_manager  # Changed from discord to webhook
+        self.webhook = webhook_manager
         self.logger = logger or logging.getLogger('ServerMonitor')
         self.ports = ports
         self.startup_delay = startup_delay
         self.messages = messages or DEFAULT_MESSAGES
+        self.firewall_enabled = firewall_enabled
 
     def on_created(self, event):
         """Handle new log file creation"""
@@ -171,7 +192,7 @@ class LogHandler(FileSystemEventHandler):
             self.server_exiting = False
             self.logger.info("Resetting port status due to new log file...")
             print("Resetting port status due to new log file...")
-            block_ports(self.ports)
+            block_ports(self.ports, self.firewall_enabled)
             if self.webhook:
                 self.webhook.send_message(self.messages.get("loading"))
 
@@ -190,7 +211,7 @@ class LogHandler(FileSystemEventHandler):
 
                             self.logger.info("Server fully loaded. Allowing connections...")
                             print("Server fully loaded. Allowing connections...")
-                            allow_ports(self.ports)
+                            allow_ports(self.ports, self.firewall_enabled)
                             self.load_complete = True
                             self.server_exiting = False
                             if self.webhook:
@@ -199,7 +220,7 @@ class LogHandler(FileSystemEventHandler):
                         elif self.SERVER_EXIT_STRING in line and not self.server_exiting:
                             self.logger.info("Server is shutting down. Blocking ports...")
                             print("Server is shutting down. Blocking ports...")
-                            block_ports(self.ports)
+                            block_ports(self.ports, self.firewall_enabled)
                             self.load_complete = False
                             self.server_exiting = True
                             if self.webhook:
@@ -209,9 +230,9 @@ class LogHandler(FileSystemEventHandler):
                 self.logger.error(f"Error reading log file: {e}")
                 print(f"Error reading log file: {e}")
 
-def monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messages):
+def monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messages, firewall_enabled):
     """Main server monitoring function"""
-    event_handler = LogHandler(log_dir, webhook_manager, logger, ports, startup_delay, messages)
+    event_handler = LogHandler(log_dir, webhook_manager, logger, ports, startup_delay, messages, firewall_enabled)
     observer = Observer()
     
     observer.schedule(event_handler, path=log_dir, recursive=False)
@@ -219,6 +240,10 @@ def monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messa
 
     logger.info(f"Monitoring logs directory: {log_dir}")
     print(f"\nMonitoring logs directory: {log_dir}")
+    if firewall_enabled:
+        print("Firewall management is enabled")
+    else:
+        print("Firewall management is disabled")
     print("Press Ctrl+C to stop monitoring...")
 
     try:
@@ -228,9 +253,10 @@ def monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messa
         logger.info("Stopping server monitoring...")
         print("\nStopping server monitoring...")
         observer.stop()
-        logger.info("Ensuring ports are allowed before exit...")
-        print("Ensuring ports are allowed before exit...")
-        allow_ports(ports)
+        if firewall_enabled:
+            logger.info("Ensuring ports are allowed before exit...")
+            print("Ensuring ports are allowed before exit...")
+            allow_ports(ports, firewall_enabled)
         if webhook_manager:
             webhook_manager.send_message(messages.get("monitor_stop"))
             webhook_manager.stop()
@@ -241,9 +267,10 @@ def main():
     """Main function"""
     logger = setup_logging()
 
-    if not shell.IsUserAnAdmin():
-        logger.error("Script needs administrator privileges.")
-        print("This script needs to be run with administrator privileges.")
+    firewall_enabled = get_firewall_enabled()
+    if firewall_enabled and not shell.IsUserAnAdmin():
+        logger.error("Script needs administrator privileges when firewall management is enabled.")
+        print("This script needs to be run with administrator privileges when firewall management is enabled.")
         input("Press Enter to exit...")
         exit()
 
@@ -256,15 +283,16 @@ def main():
         logger.info(f"Configured startup delay: {startup_delay} seconds")
         print(f"\nConfigured startup delay: {startup_delay} seconds")
     
-    webhook_manager = WebhookManager(config_path=CONFIG_PATH)  # Changed from DiscordManager
+    webhook_manager = WebhookManager(config_path=CONFIG_PATH)
     if webhook_manager.is_enabled():
         webhook_manager.start()
     
     log_dir = select_log_directory()
     
-    logger.info("Initial port blocking...")
-    print("\nInitial port blocking...")
-    block_ports(ports)
+    if firewall_enabled:
+        logger.info("Initial port blocking...")
+        print("\nInitial port blocking...")
+        block_ports(ports, firewall_enabled)
     
     if webhook_manager and webhook_manager.is_enabled():
         webhook_manager.send_message(messages.get("startup"))
@@ -273,7 +301,7 @@ def main():
     print("\nStarting server monitoring...")
     
     try:
-        monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messages)
+        monitor_server(log_dir, webhook_manager, logger, ports, startup_delay, messages, firewall_enabled)
     except KeyboardInterrupt:
         print("\nShutting down gracefully...")
     except Exception as e:
