@@ -25,7 +25,6 @@ This tool helps server administrators by monitoring server status and optionally
    ```
 
 2. Configure the tool:
-   - Copy `config.json.example` to `config.json`
    - Edit the following settings in `config.json`:
      - Set `discord_enabled` to "true" or "false"
      - Add your Discord webhook URL if using Discord notifications
