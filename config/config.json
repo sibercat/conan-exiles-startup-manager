@@ -1,7 +1,6 @@
 {
     "discord_enabled": "true",
-    "discord_bot_token": "MTIzMDQ3MzI",
-    "discord_channel_id": "121945",
+    "discord_webhook_url": "your-webhook-url-here",
     "server": {
         "name": "Conan Exiles Server",
         "logs_directory": "",
