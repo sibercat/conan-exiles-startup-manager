@@ -2,3 +2,4 @@ discord.py
 pywin32
 watchdog
 requests
+psutil
