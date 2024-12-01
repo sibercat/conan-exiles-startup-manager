@@ -1,5 +1,4 @@
 discord.py
 pywin32
 watchdog
-psutil
 requests
