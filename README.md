@@ -14,27 +14,46 @@ This tool helps server administrators by monitoring server status and optionally
 
 ## Requirements
 - Windows OS
-@@ -23,14 +24,12 @@ This tool helps server administrators by monitoring server status and optionally
+- Python 3.7+
+- Administrator privileges (only if firewall management is enabled)
+- Discord webhook URL (optional for notifications)
+
+## Setup
+1. Install requirements:
    ```
    pip install -r requirements.txt
    ```
+
 2. Configure the tool:
    - Edit the following settings in `config.json`:
      - Set `discord_enabled` to "true" or "false"
      - Add your Discord webhook URL if using Discord notifications
      - Set `firewall_enabled` to true/false (requires admin if true)
      - Adjust other settings as needed (startup delay, ports, messages)
+
 3. Start the monitor:
    - Run `!start.cmd`
    - Select your Conan Exiles server log directory when prompted
-@@ -45,6 +44,12 @@ This tool helps server administrators by monitoring server status and optionally
+
+## Configuration Options
+```json
+{
+    "discord_enabled": "true",
+    "discord_webhook_url": "your-webhook-url-here",
+    "server": {
+        "name": "Conan Exiles Server",
         "logs_directory": "",
         "startup_delay": 30,
         "firewall_enabled": false,
         "ports": [
             {"port": 7777, "proto": "UDP"},
             {"port": 7777, "proto": "TCP"},
-@@ -57,30 +62,51 @@ This tool helps server administrators by monitoring server status and optionally
+            {"port": 7778, "proto": "UDP"},
+            {"port": 27015, "proto": "UDP"},
+            {"port": 25575, "proto": "TCP"}
+        ],
+        "message_control": {
+            "startup_notification": true,
             "loading_notification": true,
             "ready_notification": true,
             "shutdown_notification": true,
@@ -65,7 +84,17 @@ This tool helps server administrators by monitoring server status and optionally
 - Can be enabled/disabled as needed
 - No bot token required, just webhook URL
 
-@@ -98,8 +124,10 @@ This tool helps server administrators by monitoring server status and optionally
+### Startup Delay
+- Configurable delay after server load detection
+- Ensures server is fully ready before allowing connections
+- Can be set to 0 to disable
+
+### Logging
+- Detailed logging of all operations
+- Rotating log files to manage disk space
+- Console output for real-time monitoring
+
+## Troubleshooting
 - If using firewall management, ensure the script runs with admin privileges
 - Check logs in the `logs` directory for detailed information
 - Verify Discord webhook URL if notifications aren't working
