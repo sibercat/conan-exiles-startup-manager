@@ -6,6 +6,12 @@
         "logs_directory": "",
         "startup_delay": 30,
         "firewall_enabled": false,
+        "zombie_detection": {
+            "enabled": true,
+            "timeout_minutes": 5,
+            "auto_kill": true,
+            "check_interval_seconds": 30
+        },
         "ports": [
             {"port": 7777, "proto": "UDP"},
             {"port": 7777, "proto": "TCP"},
@@ -17,15 +23,23 @@
             "startup_notification": true,
             "loading_notification": true,
             "ready_notification": true,
-            "shutdown_notification": true,
-            "monitor_stop_notification": true
+            "shutdown_warning_notification": true,
+            "network_shutdown_notification": true,
+            "shutdown_final_notification": true,
+            "monitor_stop_notification": true,
+            "zombie_detected_notification": true,
+            "zombie_killed_notification": true
         },
         "messages": {
             "startup": "[START] Server monitor starting up...",
-            "loading": "[UPDATE] Server is starting up... Ports blocked for safety.",
+            "loading": "[UPDATE] Server is starting up...",
             "ready": "[SUCCESS] Server is fully loaded and ready for connections!",
-            "shutdown": "[WARNING] Server is shutting down...",
-            "monitor_stop": "[STOP] Server monitor shutting down..."
+            "shutdown_warning": "[WARNING] Server is preparing to shut down...",
+            "network_shutdown": "[WARNING] Server network is shutting down...",
+            "shutdown_final": "[WARNING] Server has stopped...",
+            "monitor_stop": "[STOP] Server monitor shutting down...",
+            "zombie_detected": "[WARNING] Server process is not responding (zombie state detected)!",
+            "zombie_killed": "[UPDATE] Zombie process was forcefully terminated."
         }
     }
 }
