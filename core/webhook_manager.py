@@ -8,36 +8,36 @@ from core.logging_utils import LoggerSetup
 class WebhookManager:
     # Default configuration
     DEFAULT_CONFIG = {
-        "discord_enabled": "false",
-        "discord_webhook_url": "",
-        "server": {
-            "name": "Conan Exiles Server",
-            "logs_directory": "",
-            "startup_delay": 30,
-            "message_control": {
-                "startup_notification": True,
-                "loading_notification": True,
-                "ready_notification": True,
-                "shutdown_notification": True,
-                "monitor_stop_notification": True
-            },
-            "messages": {
-                "startup": "[START] Server monitor starting up...",
-                "loading": "[UPDATE] Server is starting up... Ports blocked for safety.",
-                "ready": "[SUCCESS] Server is fully loaded and ready for connections!",
-                "shutdown": "[WARNING] Server is shutting down...",
-                "monitor_stop": "[STOP] Server monitor shutting down..."
+            "discord_enabled": "false",
+            "discord_webhook_url": "",
+            "server": {
+                "name": "Conan Exiles Server",
+                "logs_directory": "",
+                "startup_delay": 30,
+                "firewall_enabled": False,
+                "ports": [
+                    {"port": 7777, "proto": "UDP"},
+                    {"port": 7777, "proto": "TCP"},
+                    {"port": 7778, "proto": "UDP"},
+                    {"port": 27015, "proto": "UDP"},
+                    {"port": 25575, "proto": "TCP"}
+                ],
+                "message_control": {
+                    "startup_notification": True,
+                    "loading_notification": True,
+                    "ready_notification": True,
+                    "shutdown_notification": True,
+                    "monitor_stop_notification": True
+                },
+                "messages": {
+                    "startup": "[START] Server monitor starting up...",
+                    "loading": "[UPDATE] Server is starting up... Ports blocked for safety.",
+                    "ready": "[SUCCESS] Server is fully loaded and ready for connections!",
+                    "shutdown": "[WARNING] Server is shutting down...",
+                    "monitor_stop": "[STOP] Server monitor shutting down..."
+                }
             }
         }
-    }
-
-    MESSAGE_TYPES = {
-        "[START": "startup_notification",
-        "[UPDATE": "loading_notification",
-        "[SUCCESS": "ready_notification",
-        "[WARNING": "shutdown_notification",
-        "[STOP": "monitor_stop_notification"
-    }
 
     def __init__(self, config_path: str = 'config/config.json'):
         # Setup base paths
